@@ -12,7 +12,7 @@ import org.springframework.lang.NonNull;
 
 // Importa Validated para activar validaciones a nivel de controlador
 import org.springframework.validation.annotation.Validated;
-
+// Importa CrossOrigin para permitir peticiones desde React
 // Importa las anotaciones REST de Spring Boot
 import org.springframework.web.bind.annotation.*;
 
@@ -31,6 +31,9 @@ import jakarta.validation.Valid;
  * Proporciona endpoints para crear, leer, actualizar y eliminar pacientes.
  * Ruta base: /api/pacientes
  */
+
+@CrossOrigin(origins = "http://localhost:5173")
+
 @RestController
 @RequestMapping("/api/pacientes")
 @Validated
