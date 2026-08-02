@@ -122,10 +122,33 @@ public class SecurityConfig {
                 ).permitAll()
 
                 /*
-                 * Todos los demás endpoints requieren
-                 * autenticación mediante JWT.
+                 * ====================================================
+                 * MODO DESARROLLO: SIN RESTRICCIONES
+                 * ====================================================
+                 *
+                 * Mientras el proyecto está en desarrollo, se permite
+                 * el acceso a TODOS los endpoints sin necesidad de
+                 * token JWT (incluyendo /api/pacientes, /api/citas,
+                 * /api/usuarios y /api/servicios).
+                 *
+                 * Esto permite, por ejemplo, abrir
+                 * http://localhost:8765/api/pacientes directamente
+                 * en el navegador para verificar los datos, sin
+                 * tener que iniciar sesión primero.
+                 *
+                 * IMPORTANTE PARA MÁS ADELANTE:
+                 *
+                 * Antes de llevar este proyecto a producción (o de
+                 * entregarlo si la seguridad hace parte de la
+                 * evaluación), esta línea debe volver a ser:
+                 *
+                 *     .anyRequest().authenticated()
+                 *
+                 * De lo contrario, cualquier persona podría leer,
+                 * crear, modificar o eliminar pacientes, citas y
+                 * usuarios sin iniciar sesión.
                  */
-                .anyRequest().authenticated()
+                .anyRequest().permitAll()
             )
 
             /*
