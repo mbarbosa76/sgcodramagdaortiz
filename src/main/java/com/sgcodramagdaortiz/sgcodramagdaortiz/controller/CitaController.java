@@ -1,5 +1,10 @@
 package com.sgcodramagdaortiz.sgcodramagdaortiz.controller;
 
+
+// ============================================================
+// IMPORTACIONES
+// ============================================================
+
 import java.util.List;
 import java.util.Optional;
 
@@ -13,97 +18,201 @@ import com.sgcodramagdaortiz.sgcodramagdaortiz.service.CitaService;
 
 import jakarta.validation.Valid;
 
+
+
 /**
- * Controlador REST para gestionar las Citas del sistema.
+ * ============================================================
+ * CITACONTROLLER.JAVA
+ * SISTEMA DE GESTIÓN DE CITAS ODONTOLÓGICAS
+ * CONSULTORIO ODONTOLÓGICO DRA. MAGDA ORTIZ
+ * ============================================================
+ *
+ * Controlador REST encargado de gestionar las citas.
+ *
+ * Endpoints:
+ *
+ * GET     /api/citas
+ * GET     /api/citas/{id}
+ * POST    /api/citas
+ * PUT     /api/citas/{id}
+ * DELETE  /api/citas/{id}
+ *
+ * ============================================================
  */
+
 @RestController
 @RequestMapping("/api/citas")
 @CrossOrigin(origins = "http://localhost:5173")
 @Validated
 public class CitaController {
 
+
+
     private final CitaService citaService;
 
-    /**
-     * Constructor.
-     */
-    public CitaController(CitaService citaService) {
+
+
+    public CitaController(
+            CitaService citaService) {
+
         this.citaService = citaService;
+
     }
+
+
 
     /**
      * Lista todas las citas.
-     *
-     * GET /api/citas
      */
     @GetMapping
     public List<Cita> listarCitas() {
+
         return citaService.listarCitas();
+
     }
 
+
+
+
     /**
-     * Busca una cita por ID.
-     *
-     * GET /api/citas/1
+     * Consulta una cita por ID.
      */
     @GetMapping("/{idCita}")
     public ResponseEntity<Cita> buscarCitaPorId(
             @PathVariable @NonNull Long idCita) {
 
+
         Optional<Cita> cita =
                 citaService.buscarCitaPorId(idCita);
 
+
         return cita
                 .map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.notFound().build());
+                .orElseGet(
+                    () -> ResponseEntity.notFound().build()
+                );
+
     }
 
+
+
+
+
     /**
-     * Registra una nueva cita.
-     *
-     * POST /api/citas
+     * Crear una nueva cita.
      */
     @PostMapping
-    public Cita guardarCita(@Valid @RequestBody Cita cita) {
+    public ResponseEntity<?> guardarCita(
+            @Valid @RequestBody Cita cita) {
 
-        return citaService.guardarCita(cita);
+
+        try {
+
+
+            Cita nuevaCita =
+                    citaService.guardarCita(cita);
+
+
+            return ResponseEntity.ok(nuevaCita);
+
+
+
+        } catch (RuntimeException e) {
+
+
+            return ResponseEntity
+                    .badRequest()
+                    .body(
+                        e.getMessage()
+                    );
+
+        }
+
     }
 
+
+
+
     /**
-     * Actualiza una cita existente.
+     * Actualizar una cita existente.
      */
     @PutMapping("/{idCita}")
-    public ResponseEntity<Cita> actualizarCita(
+    public ResponseEntity<?> actualizarCita(
             @PathVariable @NonNull Long idCita,
             @Valid @RequestBody Cita cita) {
 
-        Optional<Cita> citaExistente =
+
+        Optional<Cita> existente =
                 citaService.buscarCitaPorId(idCita);
 
-        if (citaExistente.isEmpty()) {
-            return ResponseEntity.notFound().build();
+
+
+        if (existente.isEmpty()) {
+
+            return ResponseEntity
+                    .notFound()
+                    .build();
+
         }
+
+
 
         cita.setIdCita(idCita);
 
-        return ResponseEntity.ok(
-                citaService.guardarCita(cita));
+
+
+        try {
+
+
+            return ResponseEntity.ok(
+                    citaService.guardarCita(cita)
+            );
+
+
+
+        } catch (RuntimeException e) {
+
+
+            return ResponseEntity
+                    .badRequest()
+                    .body(
+                        e.getMessage()
+                    );
+
+        }
+
     }
 
+
+
+
     /**
-     * Elimina una cita.
+     * Eliminar cita.
      */
     @DeleteMapping("/{idCita}")
     public ResponseEntity<Void> eliminarCita(
             @PathVariable @NonNull Long idCita) {
 
+
+
         boolean eliminado =
                 citaService.eliminarCita(idCita);
 
+
+
         if (eliminado) {
-            return ResponseEntity.noContent().build();
+
+            return ResponseEntity
+                    .noContent()
+                    .build();
+
         }
 
-        return ResponseEntity.notFound().build();
+
+        return ResponseEntity
+                .notFound()
+                .build();
+
     }
+
 }
