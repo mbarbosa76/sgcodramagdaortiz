@@ -1,20 +1,21 @@
 package com.sgcodramagdaortiz.sgcodramagdaortiz.service;
 
-// Importa LocalDate para registrar la fecha de registro automáticamente
+// Importa LocalDate para manejar fechas
 import java.time.LocalDate;
 
 // Importa List y Optional
 import java.util.List;
 import java.util.Optional;
 
-// Importa Service para marcar esta clase como componente de servicio en Spring
+// Importa anotación Service
 import org.springframework.stereotype.Service;
 
-// Importa la entidad Profesional
+// Importa entidad Profesional
 import com.sgcodramagdaortiz.sgcodramagdaortiz.model.Profesional;
 
-// Importa el repositorio de Profesional
+// Importa repositorio Profesional
 import com.sgcodramagdaortiz.sgcodramagdaortiz.repository.ProfesionalRepository;
+
 
 /**
  * ============================================================
@@ -22,45 +23,44 @@ import com.sgcodramagdaortiz.sgcodramagdaortiz.repository.ProfesionalRepository;
  * SISTEMA DE GESTIÓN DE CITAS ODONTOLÓGICAS
  * ============================================================
  *
- * Implementación del servicio de profesionales.
+ * Implementación de la interfaz ProfesionalService.
  *
- * NOTA IMPORTANTE:
+ * Contiene la lógica de negocio para:
  *
- * En la actividad se pidió un archivo llamado
- * "Servicelmpl.java", pero esa es la forma abreviada
- * (y con una pequeña errata: "l" en vez de "I") de
- * referirse a "ProfesionalServiceImpl.java", que es el
- * nombre correcto según la convención de Java/Spring Boot
- * y el mismo patrón que ya usa este proyecto en
- * UsuarioServiceImpl.java.
+ * - Consultar profesionales.
+ * - Registrar profesionales.
+ * - Actualizar profesionales.
+ * - Eliminar profesionales.
  *
- * Contiene la lógica de negocio relacionada con el
- * registro, consulta, actualización y eliminación
- * de profesionales.
+ * ============================================================
  */
+
 @Service
 public class ProfesionalServiceImpl implements ProfesionalService {
 
+
     /**
      * Repositorio de profesionales.
-     * Se inyecta automáticamente mediante constructor.
      */
     private final ProfesionalRepository profesionalRepository;
+
 
     /**
      * Constructor para inyección de dependencias.
      *
      * @param profesionalRepository repositorio de profesionales
      */
-    public ProfesionalServiceImpl(ProfesionalRepository profesionalRepository) {
+    public ProfesionalServiceImpl(
+            ProfesionalRepository profesionalRepository) {
+
         this.profesionalRepository = profesionalRepository;
+
     }
 
 
+
     /**
-     * Lista todos los profesionales.
-     *
-     * @return lista de profesionales
+     * Lista todos los profesionales registrados.
      */
     @Override
     public List<Profesional> listarProfesionales() {
@@ -70,43 +70,39 @@ public class ProfesionalServiceImpl implements ProfesionalService {
     }
 
 
+
     /**
-     * Busca un profesional por su ID.
-     *
-     * @param idProfesional identificador del profesional
-     * @return profesional encontrado
+     * Busca un profesional por ID.
      */
     @Override
-    public Optional<Profesional> buscarProfesionalPorId(Long idProfesional) {
+    public Optional<Profesional> buscarProfesionalPorId(
+            Long idProfesional) {
 
         return profesionalRepository.findById(idProfesional);
 
     }
 
 
+
     /**
-     * Registra un nuevo profesional.
+     * Guarda un profesional nuevo.
      *
-     * Si no trae fecha de registro, se asigna
-     * automáticamente la fecha actual.
-     *
-     * Si no trae estado, se asigna "Activo" por defecto
-     * (esto también ocurre a nivel de la entidad, pero
-     * se refuerza aquí por claridad).
-     *
-     * @param profesional profesional a registrar
-     * @return profesional guardado
+     * Si no tiene fecha de registro,
+     * asigna la fecha actual.
      */
     @Override
-    public Profesional guardarProfesional(Profesional profesional) {
+    public Profesional guardarProfesional(
+            Profesional profesional) {
+
 
         if (profesional.getFechaRegistro() == null) {
 
             profesional.setFechaRegistro(
-                LocalDate.now()
+                    LocalDate.now()
             );
 
         }
+
 
         if (profesional.getEstado() == null
                 || profesional.getEstado().isBlank()) {
@@ -115,25 +111,24 @@ public class ProfesionalServiceImpl implements ProfesionalService {
 
         }
 
+
         return profesionalRepository.save(profesional);
 
     }
 
 
+
     /**
      * Actualiza un profesional existente.
-     *
-     * @param idProfesional identificador del profesional
-     * @param profesional datos nuevos
-     * @return profesional actualizado, si existía
      */
     @Override
     public Optional<Profesional> actualizarProfesional(
             Long idProfesional,
             Profesional profesional) {
 
+
         Optional<Profesional> profesionalExistente =
-            profesionalRepository.findById(idProfesional);
+                profesionalRepository.findById(idProfesional);
 
 
         if (profesionalExistente.isEmpty()) {
@@ -143,43 +138,72 @@ public class ProfesionalServiceImpl implements ProfesionalService {
         }
 
 
-        Profesional actual = profesionalExistente.get();
+        Profesional actual =
+                profesionalExistente.get();
 
-        actual.setIdentificacion(profesional.getIdentificacion());
-        actual.setNombre(profesional.getNombre());
-        actual.setApellido(profesional.getApellido());
-        actual.setEspecialidad(profesional.getEspecialidad());
-        actual.setTelefono(profesional.getTelefono());
-        actual.setCorreo(profesional.getCorreo());
-        actual.setDireccion(profesional.getDireccion());
-        actual.setRegistroProfesional(profesional.getRegistroProfesional());
-        actual.setEstado(profesional.getEstado());
-        actual.setDepartamento(profesional.getDepartamento());
-        actual.setMunicipio(profesional.getMunicipio());
+
+        actual.setIdentificacion(
+                profesional.getIdentificacion());
+
+        actual.setNombre(
+                profesional.getNombre());
+
+        actual.setApellido(
+                profesional.getApellido());
+
+        actual.setEspecialidad(
+                profesional.getEspecialidad());
+
+        actual.setTelefono(
+                profesional.getTelefono());
+
+        actual.setCorreo(
+                profesional.getCorreo());
+
+        actual.setDireccion(
+                profesional.getDireccion());
+
+        actual.setRegistroProfesional(
+                profesional.getRegistroProfesional());
+
+        actual.setEstado(
+                profesional.getEstado());
+
+        actual.setDepartamento(
+                profesional.getDepartamento());
+
+        actual.setMunicipio(
+                profesional.getMunicipio());
+
 
         return Optional.of(
-            profesionalRepository.save(actual)
+                profesionalRepository.save(actual)
         );
 
     }
 
 
+
     /**
-     * Elimina un profesional por su ID.
-     *
-     * @param idProfesional identificador del profesional
-     * @return true si se eliminó, false si no existía
+     * Elimina un profesional por ID.
      */
     @Override
-    public boolean eliminarProfesional(Long idProfesional) {
+    public boolean eliminarProfesional(
+            Long idProfesional) {
+
 
         if (profesionalRepository.existsById(idProfesional)) {
 
-            profesionalRepository.deleteById(idProfesional);
+
+            profesionalRepository.deleteById(
+                    idProfesional
+            );
+
 
             return true;
 
         }
+
 
         return false;
 
