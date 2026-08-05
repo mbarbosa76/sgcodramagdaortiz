@@ -187,26 +187,47 @@ public class ProfesionalServiceImpl implements ProfesionalService {
     /**
      * Elimina un profesional por ID.
      */
-    @Override
-    public boolean eliminarProfesional(
-            Long idProfesional) {
+@Override
+public boolean eliminarProfesional(
+        Long idProfesional) {
 
 
-        if (profesionalRepository.existsById(idProfesional)) {
-
-
-            profesionalRepository.deleteById(
+    Optional<Profesional> profesionalExistente =
+            profesionalRepository.findById(
                     idProfesional
             );
 
 
-            return true;
-
-        }
-
+    if (profesionalExistente.isEmpty()) {
 
         return false;
 
     }
+
+
+    Profesional profesional =
+            profesionalExistente.get();
+
+
+    /*
+     * No se elimina físicamente.
+     *
+     * Se cambia el estado para conservar
+     * la información histórica del sistema.
+     */
+
+    profesional.setEstado(
+            "Inactivo"
+    );
+
+
+    profesionalRepository.save(
+            profesional
+    );
+
+
+    return true;
+
+}
 
 }
