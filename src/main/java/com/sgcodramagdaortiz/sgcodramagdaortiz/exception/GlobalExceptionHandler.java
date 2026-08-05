@@ -28,4 +28,15 @@ public class GlobalExceptionHandler {
                 .status(HttpStatus.NOT_FOUND)
                 .body(exception.getMessage());
     }
+
+    @ExceptionHandler(AutenticacionException.class)
+public ResponseEntity<String> manejarAutenticacion(
+        AutenticacionException exception) {
+
+
+    return ResponseEntity
+            .status(HttpStatus.UNAUTHORIZED)
+            .body(exception.getMessage());
+
+}
 }

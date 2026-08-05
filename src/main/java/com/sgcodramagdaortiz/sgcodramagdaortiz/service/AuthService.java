@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 
 import com.sgcodramagdaortiz.sgcodramagdaortiz.dto.LoginRequest;
 import com.sgcodramagdaortiz.sgcodramagdaortiz.dto.LoginResponse;
+import com.sgcodramagdaortiz.sgcodramagdaortiz.exception.AutenticacionException;
 import com.sgcodramagdaortiz.sgcodramagdaortiz.exception.RecursoNoEncontradoException;
 import com.sgcodramagdaortiz.sgcodramagdaortiz.model.Usuario;
 
@@ -81,9 +82,9 @@ public class AuthService {
          */
         if (!passwordCorrecta) {
 
-            throw new RecursoNoEncontradoException(
-                    "Usuario o contraseña incorrectos"
-            );
+throw new AutenticacionException(
+    "Usuario o contraseña incorrectos"
+);
         }
 
         /*
