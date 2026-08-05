@@ -4,6 +4,7 @@ package com.sgcodramagdaortiz.sgcodramagdaortiz.service;
 import java.util.List;
 import java.util.Optional;
 
+import com.sgcodramagdaortiz.sgcodramagdaortiz.dto.FacturaRequestDTO;
 import com.sgcodramagdaortiz.sgcodramagdaortiz.model.Factura;
 
 
@@ -33,6 +34,9 @@ public interface FacturaService {
             Factura factura
     );
 
+        Factura crearFacturaCompleta(
+                FacturaRequestDTO facturaRequest
+        );
 
     Optional<Factura> actualizarFactura(
             Long idFactura,

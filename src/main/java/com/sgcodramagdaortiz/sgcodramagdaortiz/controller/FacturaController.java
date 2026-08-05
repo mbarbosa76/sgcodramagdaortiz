@@ -4,33 +4,29 @@ package com.sgcodramagdaortiz.sgcodramagdaortiz.controller;
 import java.util.List;
 import java.util.Optional;
 
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.lang.NonNull;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+
+import com.sgcodramagdaortiz.sgcodramagdaortiz.dto.FacturaRequestDTO;
 import com.sgcodramagdaortiz.sgcodramagdaortiz.model.Factura;
 import com.sgcodramagdaortiz.sgcodramagdaortiz.service.FacturaService;
 
+
 import jakarta.validation.Valid;
+
 
 
 /**
  * ============================================================
  * FACTURACONTROLLER.JAVA
  * SISTEMA DE GESTIÓN DE CITAS ODONTOLÓGICAS
- * CONSULTORIO ODONTOLÓGICO DRA. MAGDA ORTIZ
  * ============================================================
  *
- * Controlador REST encargado de gestionar las facturas.
- *
- * Endpoints:
- *
- * GET     /api/facturas
- * GET     /api/facturas/{id}
- * POST    /api/facturas
- * PUT     /api/facturas/{id}
- * DELETE  /api/facturas/{id}
+ * Controlador REST del módulo Facturación.
  *
  * ============================================================
  */
@@ -57,8 +53,10 @@ public class FacturaController {
 
 
 
+
+
     /**
-     * Listar todas las facturas.
+     * Lista facturas.
      */
     @GetMapping
     public List<Factura> listarFacturas() {
@@ -66,6 +64,9 @@ public class FacturaController {
         return facturaService.listarFacturas();
 
     }
+
+
+
 
 
 
@@ -77,27 +78,93 @@ public class FacturaController {
             @PathVariable @NonNull Long idFactura) {
 
 
+
         Optional<Factura> factura =
-                facturaService.buscarFacturaPorId(idFactura);
+                facturaService.buscarFacturaPorId(
+                        idFactura
+                );
 
 
 
         return factura
                 .map(ResponseEntity::ok)
                 .orElseGet(
-                    () -> ResponseEntity.notFound().build()
+                    () ->
+                    ResponseEntity.notFound().build()
                 );
 
     }
 
 
 
+
+
+
+
     /**
-     * Crear factura.
+     * ========================================================
+     * NUEVO ENDPOINT
+     *
+     * Crear factura completa:
+     *
+     * - Factura
+     * - Detalles
+     * - Total automático
+     *
+     * POST:
+     *
+     * /api/facturas/completa
+     *
+     * ========================================================
+     */
+    @PostMapping("/completa")
+    public ResponseEntity<?> crearFacturaCompleta(
+            @Valid @RequestBody FacturaRequestDTO request) {
+
+
+        try {
+
+
+            Factura factura =
+                    facturaService.crearFacturaCompleta(
+                            request
+                    );
+
+
+
+            return ResponseEntity.ok(
+                    factura
+            );
+
+
+        } catch(RuntimeException e) {
+
+
+            return ResponseEntity
+                    .badRequest()
+                    .body(
+                        e.getMessage()
+                    );
+
+        }
+
+
+    }
+
+
+
+
+
+
+    /**
+     * Método tradicional.
+     *
+     * Se mantiene para compatibilidad.
      */
     @PostMapping
     public ResponseEntity<?> guardarFactura(
             @Valid @RequestBody Factura factura) {
+
 
 
         try {
@@ -114,7 +181,8 @@ public class FacturaController {
             );
 
 
-        } catch (RuntimeException e) {
+
+        } catch(RuntimeException e) {
 
 
             return ResponseEntity
@@ -123,15 +191,18 @@ public class FacturaController {
                         e.getMessage()
                     );
 
+
         }
+
 
     }
 
 
 
-    /**
-     * Actualizar factura.
-     */
+
+
+
+
     @PutMapping("/{idFactura}")
     public ResponseEntity<?> actualizarFactura(
             @PathVariable @NonNull Long idFactura,
@@ -150,16 +221,19 @@ public class FacturaController {
         return actualizada
                 .map(ResponseEntity::ok)
                 .orElseGet(
-                    () -> ResponseEntity.notFound().build()
+                    () ->
+                    ResponseEntity.notFound().build()
                 );
+
 
     }
 
 
 
-    /**
-     * Eliminar factura.
-     */
+
+
+
+
     @DeleteMapping("/{idFactura}")
     public ResponseEntity<Void> eliminarFactura(
             @PathVariable @NonNull Long idFactura) {
@@ -173,11 +247,13 @@ public class FacturaController {
 
 
 
-        if (eliminado) {
+        if(eliminado) {
+
 
             return ResponseEntity
                     .noContent()
                     .build();
+
 
         }
 
@@ -187,6 +263,8 @@ public class FacturaController {
                 .notFound()
                 .build();
 
+
     }
+
 
 }

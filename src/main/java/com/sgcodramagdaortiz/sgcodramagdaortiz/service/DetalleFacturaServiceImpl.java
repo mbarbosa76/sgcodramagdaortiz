@@ -262,7 +262,25 @@ public class DetalleFacturaServiceImpl
     }
 
 
+@Override
+public List<DetalleFactura> listarPorFactura(
+        Long idFactura) {
 
+
+    Factura factura =
+            facturaRepository.findById(idFactura)
+            .orElseThrow(
+                () -> new RuntimeException(
+                    "La factura no existe"
+                )
+            );
+
+
+    return detalleRepository.findByFactura(
+            factura
+    );
+
+}
 
 
     @Override

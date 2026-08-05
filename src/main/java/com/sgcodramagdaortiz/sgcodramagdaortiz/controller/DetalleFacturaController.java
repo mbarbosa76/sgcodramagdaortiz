@@ -154,7 +154,24 @@ public class DetalleFacturaController {
 
     }
 
+/**
+ * Buscar detalles por factura.
+ *
+ * GET:
+ * /api/detalles-factura/factura/{idFactura}
+ */
+@GetMapping("/factura/{idFactura}")
+public ResponseEntity<List<DetalleFactura>> listarPorFactura(
+        @PathVariable Long idFactura) {
 
+
+    return ResponseEntity.ok(
+            detalleService.listarPorFactura(
+                    idFactura
+            )
+    );
+
+}
 
     /**
      * Eliminar detalle.

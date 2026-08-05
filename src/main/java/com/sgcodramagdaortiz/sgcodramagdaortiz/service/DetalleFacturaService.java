@@ -43,7 +43,9 @@ public interface DetalleFacturaService {
             DetalleFactura detalleFactura
     );
 
-
+List<DetalleFactura> listarPorFactura(
+        Long idFactura
+);
 
     Optional<DetalleFactura> actualizarDetalle(
             Long idDetalle,
