@@ -2,6 +2,7 @@ package com.sgcodramagdaortiz.sgcodramagdaortiz.model;
 
 // Importa las anotaciones de JPA (para mapear la clase a una tabla de MySQL)
 import jakarta.persistence.*;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 // Importa las anotaciones de validación
 import jakarta.validation.constraints.Email;
@@ -40,6 +41,7 @@ public class Profesional {
      */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id_profesional")
     private Long idProfesional;
 
     /**
@@ -109,6 +111,27 @@ public class Profesional {
     @Column(name = "fecha_registro")
     private LocalDate fechaRegistro;
 
+    /*
+     * ============================================================
+     * RELACIÓN CON USUARIO
+     * 
+     * Relaciona el profesional con el usuario del sistema que tiene
+     * acceso mediante autenticación.
+     * 
+     * Ejemplo:
+     * Usuario: magda.ortiz
+     * Profesional: Magda Ortiz
+     * 
+     * Esta relación permite identificar al profesional correspondiente
+     * al usuario autenticado.
+     * 
+     * @JsonIgnore evita ciclos infinitos al convertir la entidad a JSON.
+     * ============================================================
+     */
+    @JsonIgnore
+    @OneToOne
+    @JoinColumn(name = "id_usuario")
+    private Usuario usuario;
 
     /*
      * ============================================================
@@ -119,11 +142,22 @@ public class Profesional {
     public Profesional() {
     }
 
-    public Profesional(Long idProfesional, String identificacion, String nombre, String apellido,
-            String especialidad, String telefono, String correo, String direccion,
-            String registroProfesional, String estado, String departamento,
-            String municipio, LocalDate fechaRegistro) {
-
+    public Profesional(
+            Long idProfesional,
+            String identificacion,
+            String nombre,
+            String apellido,
+            String especialidad,
+            String telefono,
+            String correo,
+            String direccion,
+            String registroProfesional,
+            String estado,
+            String departamento,
+            String municipio,
+            LocalDate fechaRegistro,
+            Usuario usuario
+    ) { 
         this.idProfesional = idProfesional;
         this.identificacion = identificacion;
         this.nombre = nombre;
@@ -137,8 +171,8 @@ public class Profesional {
         this.departamento = departamento;
         this.municipio = municipio;
         this.fechaRegistro = fechaRegistro;
+        this.usuario = usuario;
     }
-
 
     /*
      * ============================================================
@@ -248,5 +282,21 @@ public class Profesional {
 
     public void setFechaRegistro(LocalDate fechaRegistro) {
         this.fechaRegistro = fechaRegistro;
+    }
+
+    /*
+     * ============================================================
+     * GETTER Y SETTER USUARIO
+     * 
+     * Permiten acceder y modificar el usuario asociado al profesional.
+     * ============================================================
+     */
+
+    public Usuario getUsuario() {
+        return usuario;
+    }
+
+    public void setUsuario(Usuario usuario) {
+        this.usuario = usuario;
     }
 }

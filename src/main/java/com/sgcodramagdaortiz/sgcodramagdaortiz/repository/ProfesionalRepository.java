@@ -44,4 +44,31 @@ public interface ProfesionalRepository extends JpaRepository<Profesional, Long> 
      */
     boolean existsByCorreo(String correo);
 
+    /*
+============================================================
+BUSCAR PROFESIONAL POR USUARIO
+
+Permite obtener el profesional asociado
+al usuario autenticado.
+
+Ejemplo:
+
+Usuario:
+magda.ortiz
+
+id_usuario:
+3
+
+Resultado:
+
+Profesional:
+Magda Ortiz
+
+============================================================
+*/
+
+Optional<Profesional> findByUsuarioIdUsuario(
+        Integer idUsuario
+);
+
 }

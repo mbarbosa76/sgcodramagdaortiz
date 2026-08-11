@@ -1,227 +1,452 @@
+/*
+============================================================
+JWT AUTHENTICATION FILTER
+
+Sistema de Gestión de Citas Odontológicas
+
+Filtro encargado de interceptar las peticiones HTTP,
+validar el token JWT y registrar la autenticación
+dentro del contexto de Spring Security.
+
+El token debe enviarse mediante:
+
+Authorization: Bearer TOKEN
+
+============================================================
+*/
+
+
 package com.sgcodramagdaortiz.sgcodramagdaortiz.service;
+
+
 
 import java.io.IOException;
 
+
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+
 import org.springframework.security.core.context.SecurityContextHolder;
+
 import org.springframework.stereotype.Component;
+
 import org.springframework.web.filter.OncePerRequestFilter;
+
 
 import com.sgcodramagdaortiz.sgcodramagdaortiz.model.Usuario;
 
+import com.sgcodramagdaortiz.sgcodramagdaortiz.repository.UsuarioRepository;
+
+
 import jakarta.servlet.FilterChain;
+
 import jakarta.servlet.ServletException;
+
 import jakarta.servlet.http.HttpServletRequest;
+
 import jakarta.servlet.http.HttpServletResponse;
 
-/**
- * ============================================================
- * JWT AUTHENTICATION FILTER
- * SISTEMA DE GESTIÓN DE CITAS ODONTOLÓGICAS
- * ============================================================
- *
- * Filtro encargado de interceptar las peticiones HTTP
- * y comprobar si contienen un token JWT válido.
- *
- * El token debe enviarse mediante:
- *
- * Authorization: Bearer TOKEN
- *
- * IMPORTANTE:
- * Este filtro utiliza directamente el repositorio de usuarios
- * y NO UsuarioService.
- *
- * Esto evita crear una dependencia circular entre:
- *
- * JwtAuthenticationFilter
- * UsuarioServiceImpl
- * SecurityConfig
- */
+
+
+
+
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-    /**
-     * Servicio encargado de validar y leer los tokens JWT.
-     */
+
+
+
+    /*
+    ========================================================
+    SERVICIOS UTILIZADOS
+    ========================================================
+    */
+
+
     private final JwtService jwtService;
 
-    /**
-     * Repositorio encargado de consultar directamente
-     * los usuarios en la base de datos.
-     */
-    private final com.sgcodramagdaortiz.sgcodramagdaortiz.repository.UsuarioRepository usuarioRepository;
+
+    private final UsuarioRepository usuarioRepository;
 
 
-    /**
-     * Constructor para inyección de dependencias.
-     *
-     * @param jwtService servicio encargado de trabajar con JWT
-     * @param usuarioRepository repositorio de usuarios
-     */
+
+
+
+
+    /*
+    ========================================================
+    CONSTRUCTOR
+
+    Inyección de dependencias.
+
+    ========================================================
+    */
+
+
     public JwtAuthenticationFilter(
+
             JwtService jwtService,
-            com.sgcodramagdaortiz.sgcodramagdaortiz.repository.UsuarioRepository usuarioRepository) {
+
+            UsuarioRepository usuarioRepository
+
+    ) {
+
 
         this.jwtService = jwtService;
+
         this.usuarioRepository = usuarioRepository;
+
+
     }
 
 
-    /**
-     * ========================================================
-     * PROCESAMIENTO DE CADA PETICIÓN
-     * ========================================================
-     *
-     * Intercepta cada petición HTTP antes de que llegue
-     * al controlador correspondiente.
-     */
+
+
+
+
+
+    /*
+    ========================================================
+    PROCESAMIENTO DE PETICIONES
+
+    Ejecutado antes de llegar al Controller.
+
+    ========================================================
+    */
+
+
     @Override
     protected void doFilterInternal(
+
             HttpServletRequest request,
+
             HttpServletResponse response,
-            FilterChain filterChain)
-            throws ServletException, IOException {
+
+            FilterChain filterChain
+
+    )
+
+    throws ServletException, IOException {
+
 
 
         /*
-         * Obtiene el encabezado Authorization.
-         *
-         * Ejemplo:
-         *
-         * Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
-         */
+        ====================================================
+        OBTENER TOKEN JWT
+        ====================================================
+        */
+
+
         String authorizationHeader =
-                request.getHeader("Authorization");
+
+                request.getHeader(
+                        "Authorization"
+                );
+
+
+
 
 
         /*
-         * Si no existe el encabezado o no comienza
-         * con "Bearer ", se continúa normalmente.
-         *
-         * Spring Security posteriormente determinará
-         * si el endpoint requiere autenticación.
-         */
-        if (authorizationHeader == null
-                || !authorizationHeader.startsWith("Bearer ")) {
+        ====================================================
+        SI NO EXISTE TOKEN
 
-            filterChain.doFilter(request, response);
+        Continúa el flujo.
+
+        Spring Security decidirá
+        si requiere autenticación.
+
+        ====================================================
+        */
+
+
+        if(
+
+            authorizationHeader == null
+
+            ||
+
+            !authorizationHeader.startsWith(
+                    "Bearer "
+            )
+
+        ){
+
+
+            filterChain.doFilter(
+                    request,
+                    response
+            );
+
 
             return;
+
+
         }
 
 
+
+
+
+
         /*
-         * Extrae únicamente el token JWT.
-         *
-         * Se eliminan los primeros 7 caracteres:
-         *
-         * "Bearer "
-         */
+        ====================================================
+        EXTRAER TOKEN
+
+        Elimina:
+
+        Bearer 
+
+        dejando solamente JWT.
+
+        ====================================================
+        */
+
+
         String token =
+
                 authorizationHeader.substring(7);
+
+
+
 
 
         try {
 
+
+
             /*
-             * Obtiene el username almacenado
-             * dentro del token JWT.
-             */
+            =================================================
+            OBTENER USERNAME DEL TOKEN
+            =================================================
+            */
+
+
             String username =
-                    jwtService.obtenerUsername(token);
+
+                    jwtService.obtenerUsername(
+                            token
+                    );
 
 
-            /*
-             * Comprueba que:
-             *
-             * 1. El username exista.
-             * 2. Todavía no exista una autenticación
-             *    registrada para esta petición.
-             */
-            if (username != null
-                    && SecurityContextHolder
-                        .getContext()
-                        .getAuthentication() == null) {
+
+
+
+
+            if(
+
+                username != null
+
+                &&
+
+                SecurityContextHolder
+                .getContext()
+                .getAuthentication() == null
+
+            ){
+
 
 
                 /*
-                 * Busca directamente el usuario en el repositorio.
-                 *
-                 * IMPORTANTE:
-                 * Ya NO utilizamos UsuarioService aquí.
-                 *
-                 * Esto elimina la dependencia circular.
-                 */
+                =================================================
+                BUSCAR USUARIO EN BD
+                =================================================
+                */
+
+
                 Usuario usuario =
+
                         usuarioRepository
-                            .findByUsername(username)
-                            .orElse(null);
+                        .findByUsername(username)
+                        .orElse(null);
+
+
+
+
+
 
 
                 /*
-                 * Verifica que el usuario exista y que
-                 * el token JWT sea válido.
-                 */
-                if (usuario != null
-                        && jwtService.validarToken(
-                                token,
-                                username)) {
+                =================================================
+                VALIDAR USUARIO Y TOKEN
+                =================================================
+                */
+
+
+                if(
+
+                    usuario != null
+
+                    &&
+
+                    jwtService.validarToken(
+                            token,
+                            username
+                    )
+
+                ){
+
 
 
                     /*
-                     * Convierte el rol almacenado en MySQL
-                     * en una autoridad de Spring Security.
-                     *
-                     * Ejemplos:
-                     *
-                     * Admin
-                     * Recepcionista
-                     * Profesional
-                     */
+                    =================================================
+                    CREAR AUTORIDAD
+
+                    Ejemplo:
+
+                    Admin
+
+                    se convierte en:
+
+                    ROLE_Admin
+
+                    =================================================
+                    */
+
+
                     SimpleGrantedAuthority autoridad =
+
                             new SimpleGrantedAuthority(
-                                    "ROLE_" + usuario.getRol()
+
+                                    "ROLE_"
+                                    +
+                                    usuario.getRol()
+
                             );
 
 
+
+
+
+
+
                     /*
-                     * Crea la autenticación de Spring Security.
-                     */
+                    =================================================
+                    CREAR AUTENTICACIÓN
+
+                    =================================================
+                    */
+
+
                     UsernamePasswordAuthenticationToken authentication =
+
                             new UsernamePasswordAuthenticationToken(
+
                                     usuario.getUsername(),
+
                                     null,
-                                    java.util.List.of(autoridad)
+
+                                    java.util.List.of(
+                                            autoridad
+                                    )
+
                             );
 
 
+
+
+
+
+
                     /*
-                     * Registra la autenticación dentro
-                     * del contexto de seguridad.
-                     */
+                    =================================================
+                    GUARDAR AUTENTICACIÓN
+
+                    =================================================
+                    */
+
+
                     SecurityContextHolder
+
                             .getContext()
-                            .setAuthentication(authentication);
+
+                            .setAuthentication(
+                                    authentication
+                            );
+
+
+
+
+
+
+                    /*
+                    =================================================
+                    DEPURACIÓN TEMPORAL
+
+                    Solo para verificar roles.
+
+                    Luego se puede eliminar.
+
+                    =================================================
+                    */
+
+
+                    System.out.println(
+                            "USUARIO AUTENTICADO: "
+                            +
+                            usuario.getUsername()
+                    );
+
+
+                    System.out.println(
+                            "ROL: "
+                            +
+                            usuario.getRol()
+                    );
+
+
+                    System.out.println(
+                            "AUTORIDAD: "
+                            +
+                            autoridad.getAuthority()
+                    );
+
+
                 }
+
+
             }
 
 
-        } catch (Exception exception) {
+
+
+        }
+
+        catch(Exception exception){
+
 
             /*
-             * Si el token es inválido, está alterado
-             * o está expirado, no se establece autenticación.
-             *
-             * Spring Security decidirá posteriormente
-             * si debe responder con 401 Unauthorized.
-             */
+            Token inválido o error de validación.
+
+            No se crea autenticación.
+
+            =================================================
+            */
+
+
         }
 
 
+
+
+
         /*
-         * Continúa con el resto de filtros.
-         */
-        filterChain.doFilter(request, response);
+        ====================================================
+        CONTINUAR CADENA DE FILTROS
+        ====================================================
+        */
+
+
+        filterChain.doFilter(
+                request,
+                response
+        );
+
+
+
     }
+
+
+
 }

@@ -1,50 +1,84 @@
+/*
+============================================================
+CitaController.java
+
+Sistema de Gestión de Citas Odontológicas
+
+Controlador REST encargado de gestionar las citas.
+
+Reglas:
+
+Admin:
+- Ve todas las citas.
+- Puede crear.
+- Puede editar.
+- Puede eliminar.
+
+
+Recepcionista:
+- Ve todas las citas.
+- Puede crear.
+- Puede editar.
+- Puede eliminar.
+
+
+Profesional:
+- Ve sus propias citas.
+- Puede crear citas de remisión.
+- Solo modifica sus propias citas.
+
+============================================================
+*/
+
+
 package com.sgcodramagdaortiz.sgcodramagdaortiz.controller;
 
 
-// ============================================================
-// IMPORTACIONES
-// ============================================================
 
 import java.util.List;
+
 import java.util.Optional;
 
+
+
 import org.springframework.http.ResponseEntity;
+
 import org.springframework.lang.NonNull;
+
+import org.springframework.security.core.Authentication;
+
 import org.springframework.validation.annotation.Validated;
+
 import org.springframework.web.bind.annotation.*;
 
+
+
 import com.sgcodramagdaortiz.sgcodramagdaortiz.model.Cita;
+
 import com.sgcodramagdaortiz.sgcodramagdaortiz.service.CitaService;
+
+
 
 import jakarta.validation.Valid;
 
 
 
-/**
- * ============================================================
- * CITACONTROLLER.JAVA
- * SISTEMA DE GESTIÓN DE CITAS ODONTOLÓGICAS
- * CONSULTORIO ODONTOLÓGICO DRA. MAGDA ORTIZ
- * ============================================================
- *
- * Controlador REST encargado de gestionar las citas.
- *
- * Endpoints:
- *
- * GET     /api/citas
- * GET     /api/citas/{id}
- * POST    /api/citas
- * PUT     /api/citas/{id}
- * DELETE  /api/citas/{id}
- *
- * ============================================================
- */
+
+
+
 
 @RestController
+
 @RequestMapping("/api/citas")
+
 @CrossOrigin(origins = "http://localhost:5173")
+
 @Validated
+
 public class CitaController {
+
+
+
 
 
 
@@ -52,45 +86,121 @@ public class CitaController {
 
 
 
+
+
+
+
     public CitaController(
-            CitaService citaService) {
+
+            CitaService citaService
+
+    ){
+
 
         this.citaService = citaService;
 
+
     }
 
 
 
-    /**
-     * Lista todas las citas.
-     */
+
+
+
+
+
+
+    /*
+    ========================================================
+    LISTAR CITAS SEGÚN ROL
+
+    GET:
+
+    /api/citas
+
+    ========================================================
+    */
+
+
     @GetMapping
-    public List<Cita> listarCitas() {
 
-        return citaService.listarCitas();
+    public List<Cita> listarCitas(
+
+            Authentication authentication
+
+    ){
+
+
+
+        return citaService
+                .listarCitas(
+
+                        authentication
+
+                );
+
 
     }
 
 
 
 
-    /**
-     * Consulta una cita por ID.
-     */
+
+
+
+
+
+    /*
+    ========================================================
+    BUSCAR CITA POR ID
+
+    GET:
+
+    /api/citas/{id}
+
+    ========================================================
+    */
+
+
     @GetMapping("/{idCita}")
-    public ResponseEntity<Cita> buscarCitaPorId(
-            @PathVariable @NonNull Long idCita) {
+
+    public ResponseEntity<Cita>
+    buscarCitaPorId(
+
+            @PathVariable
+            @NonNull
+            Long idCita
+
+    ){
+
 
 
         Optional<Cita> cita =
-                citaService.buscarCitaPorId(idCita);
+
+                citaService
+                .buscarCitaPorId(
+
+                        idCita
+
+                );
+
+
+
 
 
         return cita
+
                 .map(ResponseEntity::ok)
+
                 .orElseGet(
-                    () -> ResponseEntity.notFound().build()
+
+                    () ->
+                    ResponseEntity
+                    .notFound()
+                    .build()
+
                 );
+
 
     }
 
@@ -98,121 +208,328 @@ public class CitaController {
 
 
 
-    /**
-     * Crear una nueva cita.
-     */
+
+
+
+
+    /*
+    ========================================================
+    CREAR CITA
+
+    POST:
+
+    /api/citas
+
+
+    Permite:
+
+    Admin.
+    Recepcionista.
+    Profesional (remisiones).
+
+    ========================================================
+    */
+
+
     @PostMapping
+
     public ResponseEntity<?> guardarCita(
-            @Valid @RequestBody Cita cita) {
+
+            @Valid
+            @RequestBody
+            Cita cita,
+
+
+            Authentication authentication
+
+    ){
+
 
 
         try {
+
 
 
             Cita nuevaCita =
-                    citaService.guardarCita(cita);
 
+                    citaService
+                    .guardarCita(
 
-            return ResponseEntity.ok(nuevaCita);
+                            cita,
 
+                            authentication
 
-
-        } catch (RuntimeException e) {
-
-
-            return ResponseEntity
-                    .badRequest()
-                    .body(
-                        e.getMessage()
                     );
 
-        }
-
-    }
 
 
-
-
-    /**
-     * Actualizar una cita existente.
-     */
-    @PutMapping("/{idCita}")
-    public ResponseEntity<?> actualizarCita(
-            @PathVariable @NonNull Long idCita,
-            @Valid @RequestBody Cita cita) {
-
-
-        Optional<Cita> existente =
-                citaService.buscarCitaPorId(idCita);
-
-
-
-        if (existente.isEmpty()) {
-
-            return ResponseEntity
-                    .notFound()
-                    .build();
-
-        }
-
-
-
-        cita.setIdCita(idCita);
-
-
-
-        try {
 
 
             return ResponseEntity.ok(
-                    citaService.guardarCita(cita)
+
+                    nuevaCita
+
             );
 
 
 
-        } catch (RuntimeException e) {
+        }
+
+        catch(RuntimeException e){
+
 
 
             return ResponseEntity
+
                     .badRequest()
+
                     .body(
-                        e.getMessage()
+
+                            e.getMessage()
+
                     );
 
+
         }
+
 
     }
 
 
 
 
-    /**
-     * Eliminar cita.
-     */
-    @DeleteMapping("/{idCita}")
-    public ResponseEntity<Void> eliminarCita(
-            @PathVariable @NonNull Long idCita) {
 
 
 
-        boolean eliminado =
-                citaService.eliminarCita(idCita);
+
+
+    /*
+    ========================================================
+    ACTUALIZAR CITA
+
+    PUT:
+
+    /api/citas/{id}
+
+
+    Validación:
+
+    Profesional solamente puede
+    modificar sus propias citas.
+
+    ========================================================
+    */
+
+
+    @PutMapping("/{idCita}")
+
+    public ResponseEntity<?> actualizarCita(
+
+            @PathVariable
+            @NonNull
+            Long idCita,
+
+
+            @Valid
+            @RequestBody
+            Cita cita,
+
+
+            Authentication authentication
+
+    ){
 
 
 
-        if (eliminado) {
+        Optional<Cita> existente =
+
+                citaService
+                .buscarCitaPorId(
+
+                        idCita
+
+                );
+
+
+
+
+
+        if(existente.isEmpty()){
+
 
             return ResponseEntity
-                    .noContent()
+
+                    .notFound()
+
                     .build();
+
 
         }
 
 
-        return ResponseEntity
-                .notFound()
-                .build();
+
+
+
+
+        cita.setIdCita(
+
+                idCita
+
+        );
+
+
+
+
+
+
+        try {
+
+
+
+            return ResponseEntity.ok(
+
+                    citaService
+                    .guardarCita(
+
+                            cita,
+
+                            authentication
+
+                    )
+
+            );
+
+
+
+        }
+
+        catch(RuntimeException e){
+
+
+
+            return ResponseEntity
+
+                    .badRequest()
+
+                    .body(
+
+                            e.getMessage()
+
+                    );
+
+
+        }
+
 
     }
+
+
+
+
+
+
+
+
+
+    /*
+    ========================================================
+    ELIMINAR CITA
+
+    DELETE:
+
+    /api/citas/{id}
+
+
+    Profesional:
+    Solo sus propias citas.
+
+    ========================================================
+    */
+
+
+    @DeleteMapping("/{idCita}")
+
+    public ResponseEntity<?> eliminarCita(
+
+            @PathVariable
+            @NonNull
+            Long idCita,
+
+
+            Authentication authentication
+
+    ){
+
+
+
+        try {
+
+
+
+            boolean eliminado =
+
+                    citaService
+                    .eliminarCita(
+
+                            idCita,
+
+                            authentication
+
+                    );
+
+
+
+
+
+            if(eliminado){
+
+
+
+                return ResponseEntity
+
+                        .noContent()
+
+                        .build();
+
+
+            }
+
+
+
+
+
+            return ResponseEntity
+
+                    .notFound()
+
+                    .build();
+
+
+
+        }
+
+        catch(RuntimeException e){
+
+
+
+            return ResponseEntity
+
+                    .status(403)
+
+                    .body(
+
+                            e.getMessage()
+
+                    );
+
+
+        }
+
+
+    }
+
+
+
+
 
 }

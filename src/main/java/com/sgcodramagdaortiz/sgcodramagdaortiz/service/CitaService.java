@@ -1,185 +1,787 @@
+/*
+============================================================
+CitaService.java
+
+Sistema de Gestión de Citas Odontológicas
+
+Servicio encargado de la lógica de negocio
+del módulo Citas.
+
+Reglas:
+
+Admin:
+- Ve todas las citas.
+- Crea citas.
+- Edita cualquier cita.
+- Elimina cualquier cita.
+
+
+Recepcionista:
+- Ve todas las citas.
+- Crea citas.
+- Edita cualquier cita.
+- Elimina cualquier cita.
+
+
+Profesional:
+- Ve únicamente sus citas.
+- Puede crear citas de remisión.
+- Solo puede editar/eliminar sus propias citas.
+
+============================================================
+*/
+
+
 package com.sgcodramagdaortiz.sgcodramagdaortiz.service;
 
+
+
 import java.time.LocalDate;
+
 import java.util.List;
+
 import java.util.Optional;
 
+
+
 import org.springframework.lang.NonNull;
+
+import org.springframework.security.core.Authentication;
+
 import org.springframework.stereotype.Service;
 
+
+
 import com.sgcodramagdaortiz.sgcodramagdaortiz.model.Cita;
+
 import com.sgcodramagdaortiz.sgcodramagdaortiz.model.Paciente;
+
 import com.sgcodramagdaortiz.sgcodramagdaortiz.model.Profesional;
+
 import com.sgcodramagdaortiz.sgcodramagdaortiz.model.Servicio;
 
+import com.sgcodramagdaortiz.sgcodramagdaortiz.model.Usuario;
+
+
+
 import com.sgcodramagdaortiz.sgcodramagdaortiz.repository.CitaRepository;
+
 import com.sgcodramagdaortiz.sgcodramagdaortiz.repository.PacienteRepository;
+
 import com.sgcodramagdaortiz.sgcodramagdaortiz.repository.ProfesionalRepository;
+
 import com.sgcodramagdaortiz.sgcodramagdaortiz.repository.ServicioRepository;
 
+import com.sgcodramagdaortiz.sgcodramagdaortiz.repository.UsuarioRepository;
 
-/**
- * ============================================================
- * CITASERVICE.JAVA
- * SISTEMA DE GESTIÓN DE CITAS ODONTOLÓGICAS
- * CONSULTORIO ODONTOLÓGICO DRA. MAGDA ORTIZ
- * ============================================================
- *
- * Servicio encargado de la lógica de negocio de las citas.
- *
- * ============================================================
- */
+
+
+
+
 @Service
 public class CitaService {
 
 
+
+
+
     private final CitaRepository citaRepository;
+
 
     private final PacienteRepository pacienteRepository;
 
+
     private final ProfesionalRepository profesionalRepository;
+
 
     private final ServicioRepository servicioRepository;
 
 
+    private final UsuarioRepository usuarioRepository;
+
+
+
+
+
+
+
+
+
     public CitaService(
+
             CitaRepository citaRepository,
+
             PacienteRepository pacienteRepository,
+
             ProfesionalRepository profesionalRepository,
-            ServicioRepository servicioRepository) {
+
+            ServicioRepository servicioRepository,
+
+            UsuarioRepository usuarioRepository
+
+    ){
+
 
         this.citaRepository = citaRepository;
+
+
         this.pacienteRepository = pacienteRepository;
+
+
         this.profesionalRepository = profesionalRepository;
+
+
         this.servicioRepository = servicioRepository;
 
+
+        this.usuarioRepository = usuarioRepository;
+
+
     }
 
 
 
-    public List<Cita> listarCitas() {
 
-        return citaRepository.findAll();
+
+
+
+
+
+    /*
+    ========================================================
+    LISTAR CITAS SEGÚN ROL
+
+    Admin:
+    Todas.
+
+    Recepcionista:
+    Todas.
+
+    Profesional:
+    Solo propias.
+
+    ========================================================
+    */
+
+
+    public List<Cita> listarCitas(
+
+            Authentication authentication
+
+    ){
+
+
+
+        String rol =
+
+                obtenerRol(authentication);
+
+
+
+
+
+        if(
+
+            rol.equals("ROLE_Admin")
+
+            ||
+
+            rol.equals("ROLE_Recepcionista")
+
+        ){
+
+
+            return citaRepository.findAll();
+
+
+        }
+
+
+
+
+
+
+        if(
+
+            rol.equals("ROLE_Profesional")
+
+        ){
+
+
+
+            Profesional profesional =
+
+                    obtenerProfesionalUsuario(
+
+                            authentication
+
+                    );
+
+
+
+
+
+            return citaRepository
+                    .findByProfesionalIdProfesional(
+
+                            profesional
+                            .getIdProfesional()
+
+                    );
+
+
+        }
+
+
+
+
+
+
+        return List.of();
+
 
     }
 
+
+
+
+
+
+
+
+
+    /*
+    ========================================================
+    BUSCAR CITA POR ID
+
+    ========================================================
+    */
 
 
     public Optional<Cita> buscarCitaPorId(
-            @NonNull Long idCita) {
+
+            @NonNull Long idCita
+
+    ){
+
 
         return citaRepository.findById(idCita);
 
+
     }
 
+
+
+
+
+
+
+
+
+    /*
+    ========================================================
+    CREAR O ACTUALIZAR CITA
+
+    Un profesional puede crear citas de remisión.
+
+    Ejemplo:
+
+    Odontólogo general
+          |
+          ↓
+    Endodoncista
+
+    ========================================================
+    */
 
 
     public Cita guardarCita(
-            @NonNull Cita cita) {
+
+            @NonNull Cita cita,
+
+            Authentication authentication
+
+    ){
 
 
-        // Validar paciente
 
         Paciente paciente =
+
                 pacienteRepository.findById(
-                        cita.getPaciente().getIdPaciente()
+
+                        cita.getPaciente()
+                        .getIdPaciente()
+
                 )
+
                 .orElseThrow(
+
                     () -> new RuntimeException(
-                        "El paciente no existe"
+
+                            "El paciente no existe"
+
                     )
+
                 );
 
 
-        // Validar profesional
+
+
+
+
 
         Profesional profesional =
+
                 profesionalRepository.findById(
-                        cita.getProfesional().getIdProfesional()
+
+                        cita.getProfesional()
+                        .getIdProfesional()
+
                 )
+
                 .orElseThrow(
+
                     () -> new RuntimeException(
-                        "El profesional no existe"
+
+                            "El profesional no existe"
+
                     )
+
                 );
 
 
-        // Validar servicio
+
+
+
+
 
         Servicio servicio =
+
                 servicioRepository.findById(
-                        cita.getServicio().getIdServicio()
+
+                        cita.getServicio()
+                        .getIdServicio()
+
                 )
+
                 .orElseThrow(
+
                     () -> new RuntimeException(
-                        "El servicio no existe"
+
+                            "El servicio no existe"
+
                     )
+
                 );
 
 
-        // Asignar entidades completas
-
-        cita.setPaciente(paciente);
-
-        cita.setProfesional(profesional);
-
-        cita.setServicio(servicio);
 
 
-        // Tomar duración desde el servicio
 
-        cita.setDuracionMin(
-                servicio.getDuracionMin()
+
+
+
+        cita.setPaciente(
+
+                paciente
+
         );
 
 
-        // Fechas automáticas
+        cita.setProfesional(
 
-        if (cita.getFechaCreacion() == null) {
+                profesional
+
+        );
+
+
+        cita.setServicio(
+
+                servicio
+
+        );
+
+
+
+
+
+
+
+        cita.setDuracionMin(
+
+                servicio.getDuracionMin()
+
+        );
+
+
+
+
+
+
+
+        if(
+
+            cita.getFechaCreacion() == null
+
+        ){
+
 
             cita.setFechaCreacion(
+
                     LocalDate.now()
+
             );
 
+
         }
+
+
+
+
+
 
 
         cita.setFechaModificacion(
+
                 LocalDate.now()
+
         );
 
 
-        // Estado inicial
 
-        if (cita.getEstado() == null ||
-                cita.getEstado().isBlank()) {
 
-            cita.setEstado("PROGRAMADA");
+
+
+
+        if(
+
+            cita.getEstado() == null
+
+            ||
+
+            cita.getEstado().isBlank()
+
+        ){
+
+
+            cita.setEstado(
+
+                    "PROGRAMADA"
+
+            );
+
 
         }
 
 
-        return citaRepository.save(cita);
+
+
+
+
+
+        return citaRepository.save(
+
+                cita
+
+        );
+
 
     }
 
+
+
+
+
+
+
+
+
+    /*
+    ========================================================
+    ELIMINAR CITA
+
+    Profesional solo puede eliminar
+    sus propias citas.
+
+    ========================================================
+    */
 
 
     public boolean eliminarCita(
-            @NonNull Long idCita) {
+
+            @NonNull Long idCita,
+
+            Authentication authentication
+
+    ){
 
 
-        if (citaRepository.existsById(idCita)) {
 
-            citaRepository.deleteById(idCita);
+        Cita cita =
 
-            return true;
+                citaRepository
+                .findById(idCita)
+
+                .orElse(null);
+
+
+
+
+
+        if(cita == null){
+
+
+            return false;
+
 
         }
 
 
-        return false;
+
+
+
+        validarPermisoSobreCita(
+
+                cita,
+
+                authentication
+
+        );
+
+
+
+
+
+        citaRepository.deleteById(
+
+                idCita
+
+        );
+
+
+
+        return true;
+
 
     }
+
+
+
+
+
+
+
+
+
+    /*
+    ========================================================
+    VALIDAR PERMISOS SOBRE UNA CITA
+
+    Admin:
+    Todo permitido.
+
+    Recepcionista:
+    Todo permitido.
+
+    Profesional:
+    Solo sus citas.
+
+    ========================================================
+    */
+
+
+    private void validarPermisoSobreCita(
+
+            Cita cita,
+
+            Authentication authentication
+
+    ){
+
+
+
+        String rol =
+
+                obtenerRol(authentication);
+
+
+
+
+
+
+        if(
+
+            rol.equals("ROLE_Admin")
+
+            ||
+
+            rol.equals("ROLE_Recepcionista")
+
+        ){
+
+
+            return;
+
+
+        }
+
+
+
+
+
+
+        if(
+
+            rol.equals("ROLE_Profesional")
+
+        ){
+
+
+
+            Profesional profesional =
+
+                    obtenerProfesionalUsuario(
+
+                            authentication
+
+                    );
+
+
+
+
+
+            if(
+
+                !cita.getProfesional()
+                .getIdProfesional()
+                .equals(
+
+                    profesional
+                    .getIdProfesional()
+
+                )
+
+            ){
+
+
+
+                throw new RuntimeException(
+
+                    "No tiene permisos para modificar esta cita."
+
+                );
+
+
+            }
+
+
+        }
+
+
+    }
+
+
+
+
+
+
+
+
+
+    /*
+    ========================================================
+    OBTENER ROL DEL USUARIO
+
+    ========================================================
+    */
+
+
+    private String obtenerRol(
+
+            Authentication authentication
+
+    ){
+
+
+        return authentication
+                .getAuthorities()
+                .iterator()
+                .next()
+                .getAuthority();
+
+
+    }
+
+
+
+
+
+
+
+
+
+    /*
+    ========================================================
+    OBTENER PROFESIONAL ASOCIADO
+
+    ========================================================
+    */
+
+
+    private Profesional obtenerProfesionalUsuario(
+
+            Authentication authentication
+
+    ){
+
+
+
+        Usuario usuario =
+
+                usuarioRepository
+                .findByUsername(
+
+                        authentication.getName()
+
+                )
+
+                .orElseThrow(
+
+                    () -> new RuntimeException(
+
+                            "Usuario no encontrado"
+
+                    )
+
+                );
+
+
+
+
+
+
+        return profesionalRepository
+                .findByUsuarioIdUsuario(
+
+                        usuario.getIdUsuario()
+
+                )
+
+                .orElseThrow(
+
+                    () -> new RuntimeException(
+
+                            "Profesional no asociado"
+
+                    )
+
+                );
+
+
+    }
+
+
+
+
 
 }

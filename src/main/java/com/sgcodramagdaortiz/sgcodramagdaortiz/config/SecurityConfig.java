@@ -9,7 +9,6 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.security.web.AuthenticationEntryPoint;
 
 import com.sgcodramagdaortiz.sgcodramagdaortiz.service.JwtAuthenticationFilter;
 
@@ -34,9 +33,7 @@ public class SecurityConfig {
      *
      * @param jwtAuthenticationFilter filtro JWT
      */
-    public SecurityConfig(
-            JwtAuthenticationFilter jwtAuthenticationFilter) {
-
+    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
     }
 
@@ -47,11 +44,9 @@ public class SecurityConfig {
      * @return cadena de filtros configurada
      */
     @Bean
-    public SecurityFilterChain securityFilterChain(
-            HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
         http
-
             /*
              * Desactiva CSRF porque estamos trabajando
              * con una API REST que utiliza JWT.
@@ -59,101 +54,331 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
 
             /*
-             * Permite solicitudes provenientes del frontend
-             * React/Vite.
+             * Permite solicitudes provenientes del frontend (CORS).
              */
             .cors(cors -> {
             })
 
             /*
-             * La aplicación no utiliza sesiones HTTP.
-             *
-             * Cada petición protegida debe enviar
-             * su propio token JWT.
+             * La aplicación no utiliza sesiones HTTP (Stateful).
+             * Cada petición protegida debe enviar su propio token JWT.
              */
             .sessionManagement(session ->
-                session.sessionCreationPolicy(
-                    SessionCreationPolicy.STATELESS
-                )
+                session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )
 
-            /*
-             * Configura la respuesta cuando un usuario
-             * intenta acceder a un recurso protegido
-             * sin estar autenticado.
-             *
-             * Se devuelve 401 Unauthorized en lugar
-             * de la respuesta predeterminada 403 Forbidden.
-             */
-            .exceptionHandling(exception ->
-                exception.authenticationEntryPoint(
-                    (request, response, authException) -> {
+/*
+============================================================
+MANEJO DE ERRORES DE SEGURIDAD
 
-                        response.sendError(
-                            HttpServletResponse.SC_UNAUTHORIZED,
-                            "No está autenticado. Debe proporcionar un token JWT."
-                        );
-                    }
-                )
-            )
+401:
+Usuario no autenticado.
+
+403:
+Usuario autenticado pero sin permisos.
+
+============================================================
+*/
+
+/*
+============================================================
+MANEJO DE ERRORES DE SEGURIDAD
+
+401:
+No existe autenticación válida.
+
+403:
+Existe autenticación pero el rol no permite
+acceder al recurso.
+
+============================================================
+*/
+
+.exceptionHandling(exception -> {
+
+
+    exception.authenticationEntryPoint(
+
+        (request, response, authException) -> {
+
+
+            response.setStatus(
+                    HttpServletResponse.SC_UNAUTHORIZED
+            );
+
+
+            response.getWriter().write(
+                "No autenticado"
+            );
+
+
+        }
+
+
+    );
+
+
+    exception.accessDeniedHandler(
+
+        (request, response, accessDeniedException) -> {
+
+
+            response.setStatus(
+                    HttpServletResponse.SC_FORBIDDEN
+            );
+
+
+            response.getWriter().write(
+                "No tiene permisos para acceder a este recurso"
+            );
+
+
+        }
+
+
+    );
+
+
+})
 
             /*
-             * Define las reglas de autorización.
+             * REGLAS DE AUTORIZACIÓN POR ROL Y ENDPOINTS
              */
             .authorizeHttpRequests(auth -> auth
 
                 /*
-                 * Login público.
-                 *
-                 * No requiere JWT porque aquí se obtiene
-                 * precisamente el token.
+                 * LOGIN PÚBLICO & API COLOMBIA
                  */
-                .requestMatchers(
-                    "/api/auth/login"
-                ).permitAll()
+                .requestMatchers("/api/auth/login").permitAll()
 
                 /*
-                 * Permite las solicitudes OPTIONS utilizadas
-                 * por CORS desde React.
+                 * CORS PRE-FLIGHT (OPTIONS)
                  */
-                .requestMatchers(
-                    HttpMethod.OPTIONS,
-                    "/**"
-                ).permitAll()
+                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
+/*
+ * ============================================================
+ * DASHBOARD ADMIN
+ * ============================================================
+ */
+
+.requestMatchers(
+        "/api/dashboard/admin"
+)
+.hasRole("Admin")
+
+
+
+/*
+ * ============================================================
+ * DASHBOARD PROFESIONAL
+ * ============================================================
+ */
+
+.requestMatchers(
+        "/api/dashboard/profesional"
+)
+.hasRole("Profesional")
+
+
+
+/*
+ * ============================================================
+ * DASHBOARD RECEPCIONISTA
+ * ============================================================
+ */
+
+.requestMatchers(
+        "/api/dashboard/recepcionista",
+        "/api/dashboard/recepcionista/**"
+)
+.hasRole("Recepcionista")
+
+
+
+
+
+/*
+ * ============================================================
+ * GRÁFICOS ADMIN
+ * ============================================================
+ */
+
+.requestMatchers(
+        "/api/dashboard/citas-estados",
+        "/api/dashboard/facturacion-mensual"
+)
+.hasRole("Admin")
+
+
+
+
+
+/*
+ * ============================================================
+ * GRÁFICO PROFESIONAL
+ * ============================================================
+ */
+
+.requestMatchers(
+        "/api/dashboard/profesional/citas-estados"
+)
+.hasRole("Profesional")
+
+
+
+
+
+/*
+ * ============================================================
+ * GRÁFICO RECEPCIONISTA
+ * ============================================================
+ */
+
+.requestMatchers(
+        "/api/dashboard/recepcionista/citas-estados"
+)
+.hasRole("Recepcionista")
 
                 /*
-                 * ====================================================
-                 * MODO DESARROLLO: SIN RESTRICCIONES
-                 * ====================================================
-                 *
-                 * Mientras el proyecto está en desarrollo, se permite
-                 * el acceso a TODOS los endpoints sin necesidad de
-                 * token JWT (incluyendo /api/pacientes, /api/citas,
-                 * /api/usuarios y /api/servicios).
-                 *
-                 * Esto permite, por ejemplo, abrir
-                 * http://localhost:8765/api/pacientes directamente
-                 * en el navegador para verificar los datos, sin
-                 * tener que iniciar sesión primero.
-                 *
-                 * IMPORTANTE PARA MÁS ADELANTE:
-                 *
-                 * Antes de llevar este proyecto a producción (o de
-                 * entregarlo si la seguridad hace parte de la
-                 * evaluación), esta línea debe volver a ser:
-                 *
-                 *     .anyRequest().authenticated()
-                 *
-                 * De lo contrario, cualquier persona podría leer,
-                 * crear, modificar o eliminar pacientes, citas y
-                 * usuarios sin iniciar sesión.
+                 * GESTIÓN DE USUARIOS Y PROFESIONALES (Solo Admin)
                  */
-                .anyRequest().permitAll()
+/*
+ * GESTIÓN DE USUARIOS
+ *
+ * Solo administrador.
+ */
+.requestMatchers("/api/usuarios/**")
+.hasRole("Admin")
+
+
+
+                    /*
+                    * CONSULTA DE PROFESIONALES
+                    *
+                    * Necesaria para:
+                    *
+                    * - Crear citas.
+                    * - Mostrar profesionales disponibles.
+                    *
+                    * Permisos:
+                    *
+                    * Admin.
+                    * Profesional.
+                    * Recepcionista.
+                    */
+                    .requestMatchers(
+                            HttpMethod.GET,
+                            "/api/profesionales/**"
+                    )
+                    .hasAnyRole(
+                            "Admin",
+                            "Profesional",
+                            "Recepcionista"
+                    )
+
+
+
+                    /*
+                    * ADMINISTRACIÓN DE PROFESIONALES
+                    *
+                    * Crear.
+                    * Actualizar.
+                    * Eliminar.
+                    *
+                    * Solo administrador.
+                    */
+                    .requestMatchers(
+                            "/api/profesionales/**"
+                    )
+                    .hasRole("Admin")
+
+                /*
+                 * PACIENTES
+                 */
+                .requestMatchers("/api/pacientes/**").hasAnyRole("Admin", "Profesional", "Recepcionista")
+
+                /*
+                 * CITAS
+                 */
+                .requestMatchers("/api/citas/**").hasAnyRole("Admin", "Profesional", "Recepcionista")
+
+                /*
+                 * HISTORIA CLÍNICA
+                 */
+                .requestMatchers("/api/historias/**").hasAnyRole("Admin", "Profesional")
+
+                /*
+                 * SERVICIOS
+                 */
+                /*
+ * ============================================================
+ * CONSULTA DE SERVICIOS
+ *
+ * Necesaria para:
+ *
+ * - Crear citas.
+ * - Mostrar servicios disponibles.
+ *
+ * Permisos:
+ *
+ * Admin.
+ * Profesional.
+ * Recepcionista.
+ *
+ * ============================================================
+ */
+
+.requestMatchers(
+        HttpMethod.GET,
+        "/api/servicios/**"
+)
+.hasAnyRole(
+        "Admin",
+        "Profesional",
+        "Recepcionista"
+)
+
+
+
+
+
+/*
+ * ============================================================
+ * ADMINISTRACIÓN DE SERVICIOS
+ *
+ * Crear.
+ * Actualizar.
+ * Eliminar.
+ *
+ * Solo administrador.
+ *
+ * ============================================================
+ */
+
+.requestMatchers(
+        "/api/servicios/**"
+)
+.hasRole("Admin")
+
+                /*
+                 * FACTURACIÓN
+                 */
+                .requestMatchers("/api/facturas/**").hasAnyRole("Admin", "Recepcionista")
+
+                /*
+                 * CUALQUIER OTRO ENDPOINT REQUIERE AUTENTICACIÓN
+                 * 
+                 * NOTA PARA DESARROLLO: Si necesitas desactivar momentáneamente 
+                 * la seguridad para pruebas sin token, cambia la siguiente línea a:
+                 * .anyRequest().permitAll()
+                 */
+                .anyRequest().authenticated()
             )
 
             /*
-             * Agrega nuestro filtro JWT antes del filtro
-             * estándar de autenticación.
+             * Agrega el filtro JWT antes del filtro
+             * estándar de autenticación de Spring.
              */
             .addFilterBefore(
                 jwtAuthenticationFilter,
@@ -171,7 +396,6 @@ public class SecurityConfig {
      */
     @Bean
     public PasswordEncoder passwordEncoder() {
-
         return new BCryptPasswordEncoder();
     }
 }
