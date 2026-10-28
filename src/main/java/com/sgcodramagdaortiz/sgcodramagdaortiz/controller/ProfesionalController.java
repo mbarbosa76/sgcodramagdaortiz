@@ -183,4 +183,31 @@ public class ProfesionalController {
 
     }
 
+
+    /**
+     * Reactiva un profesional previamente desactivado.
+     *
+     * PATCH /api/profesionales/{idProfesional}/reactivar
+     *
+     * Solo cambia el estado a "Activo"; no requiere ni
+     * modifica el resto de los datos del profesional.
+     *
+     * @param idProfesional identificador del profesional
+     * @return profesional reactivado o 404 si no existe
+     */
+    @PatchMapping("/{idProfesional}/reactivar")
+    public ResponseEntity<Profesional> reactivarProfesional(
+            @PathVariable Long idProfesional) {
+
+        Optional<Profesional> profesionalReactivado =
+            profesionalService.reactivarProfesional(idProfesional);
+
+        return profesionalReactivado
+            .map(ResponseEntity::ok)
+            .orElseGet(
+                () -> ResponseEntity.notFound().build()
+            );
+
+    }
+
 }

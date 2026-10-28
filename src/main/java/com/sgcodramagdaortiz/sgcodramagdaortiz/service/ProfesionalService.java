@@ -36,4 +36,17 @@ public interface ProfesionalService {
 
     boolean eliminarProfesional(Long idProfesional);
 
+    /**
+     * Reactiva un profesional previamente desactivado
+     * (cambia su estado de "Inactivo" a "Activo").
+     *
+     * No es lo mismo que "guardarProfesional" ni que
+     * "actualizarProfesional": este método NO modifica
+     * ningún otro dato del profesional, solo su estado.
+     *
+     * @param idProfesional identificador del profesional
+     * @return el profesional actualizado, o vacío si no existe
+     */
+    Optional<Profesional> reactivarProfesional(Long idProfesional);
+
 }

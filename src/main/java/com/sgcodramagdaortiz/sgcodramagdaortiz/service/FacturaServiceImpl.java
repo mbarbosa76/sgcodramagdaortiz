@@ -10,7 +10,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 
+import com.sgcodramagdaortiz.sgcodramagdaortiz.dto.ActualizarFacturaDTO;
 import com.sgcodramagdaortiz.sgcodramagdaortiz.dto.FacturaRequestDTO;
+
 
 import com.sgcodramagdaortiz.sgcodramagdaortiz.model.Cita;
 import com.sgcodramagdaortiz.sgcodramagdaortiz.model.DetalleFactura;
@@ -377,6 +379,20 @@ public class FacturaServiceImpl
         }
 
 
+        /*
+          ============================================================
+          VALIDACIÓN: NO SE PERMITEN FACTURAS CON FECHA FUTURA
+          ============================================================
+          Contablemente, una factura documenta un servicio ya
+          prestado (o que se está prestando en este momento), no
+          uno que aún no ha ocurrido. Por eso no debería poder
+          registrarse con una fecha posterior a hoy.
+        */
+        validarFechaNoFutura(
+                factura.getFecha()
+        );
+
+
 
 
         if(factura.getEstadoPago()
@@ -398,6 +414,32 @@ public class FacturaServiceImpl
     }
 
 
+
+
+
+
+    /**
+     * ============================================================
+     * VALIDAR QUE LA FECHA NO SEA FUTURA
+     * ============================================================
+     * Se usa tanto al crear como al editar una factura.
+     * Lanza una excepción (que el controlador traduce en un
+     * HTTP 400) si la fecha recibida es posterior a hoy.
+     */
+    private void validarFechaNoFutura(
+            LocalDate fecha) {
+
+        if(fecha != null
+                &&
+            fecha.isAfter(LocalDate.now())) {
+
+            throw new RuntimeException(
+                    "La fecha de la factura no puede ser posterior a hoy."
+            );
+
+        }
+
+    }
 
 
 
@@ -459,54 +501,120 @@ public class FacturaServiceImpl
 
 
 
-    @Override
-    public Optional<Factura> actualizarFactura(
-            Long idFactura,
-            Factura factura) {
+  /**
+ * ============================================================
+ * ACTUALIZAR FACTURA
+ * ============================================================
+ *
+ * Actualiza únicamente información administrativa
+ * de una factura existente.
+ *
+ * Campos permitidos:
+ *
+ * - Estado de pago.
+ * - Total.
+ * - Fecha.
+ *
+ * No modifica:
+ *
+ * - Paciente.
+ * - Cita.
+ * - Servicios asociados.
+ *
+ * Esto protege la integridad histórica de la factura.
+ *
+ * ============================================================
+ */
+@Override
+public Optional<Factura> actualizarFactura(
+        Long idFactura,
+        ActualizarFacturaDTO request
+) {
 
 
-
-        Optional<Factura> existente =
-                facturaRepository.findById(
-                        idFactura
-                );
-
+    Optional<Factura> existente =
+            facturaRepository.findById(
+                    idFactura
+            );
 
 
-        if(existente.isEmpty()) {
+    /*
+     * Si la factura no existe,
+     * se retorna vacío para que el controlador
+     * responda HTTP 404.
+     */
+    if(existente.isEmpty()) {
 
-            return Optional.empty();
-
-        }
-
-
-
-        Factura actual =
-                existente.get();
-
-
-
-        actual.setEstadoPago(
-                factura.getEstadoPago()
-        );
-
-
-
-        actual.setTotal(
-                factura.getTotal()
-        );
-
-
-
-        return Optional.of(
-                facturaRepository.save(actual)
-        );
-
+        return Optional.empty();
 
     }
 
 
 
+    Factura actual =
+            existente.get();
+
+
+
+    /*
+     * Actualización del estado del pago.
+     */
+    if(request.getEstadoPago() != null) {
+
+
+        actual.setEstadoPago(
+                request.getEstadoPago()
+        );
+
+    }
+
+
+
+
+    /*
+     * Actualización del valor total.
+     */
+    if(request.getTotal() != null) {
+
+
+        actual.setTotal(
+                request.getTotal()
+        );
+
+    }
+
+
+
+
+
+    /*
+     * Actualización de fecha.
+     *
+     * No permite registrar fechas futuras.
+     */
+    if(request.getFecha() != null) {
+
+
+        validarFechaNoFutura(
+                request.getFecha()
+        );
+
+
+        actual.setFecha(
+                request.getFecha()
+        );
+
+    }
+
+
+
+
+    return Optional.of(
+            facturaRepository.save(actual)
+    );
+
+
+}
 
 
 

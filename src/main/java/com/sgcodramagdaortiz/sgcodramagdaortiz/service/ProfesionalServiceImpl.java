@@ -230,4 +230,41 @@ public boolean eliminarProfesional(
 
 }
 
+
+
+    /**
+     * Reactiva un profesional que estaba en estado "Inactivo".
+     *
+     * Es el complemento de "eliminarProfesional": ese método
+     * nunca borra al profesional de la base de datos, solo
+     * cambia su estado a "Inactivo" para conservar el
+     * historial (citas, historias clínicas, facturas, etc.
+     * que ya lo referencian). Este método revierte ese cambio.
+     */
+    @Override
+    public Optional<Profesional> reactivarProfesional(
+            Long idProfesional) {
+
+        Optional<Profesional> profesionalExistente =
+                profesionalRepository.findById(idProfesional);
+
+        if (profesionalExistente.isEmpty()) {
+
+            return Optional.empty();
+
+        }
+
+        Profesional profesional =
+                profesionalExistente.get();
+
+        profesional.setEstado(
+                "Activo"
+        );
+
+        return Optional.of(
+                profesionalRepository.save(profesional)
+        );
+
+    }
+
 }
