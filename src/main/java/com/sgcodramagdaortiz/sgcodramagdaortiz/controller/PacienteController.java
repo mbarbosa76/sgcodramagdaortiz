@@ -32,7 +32,7 @@ import jakarta.validation.Valid;
  * Ruta base: /api/pacientes
  */
 
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = {"http://localhost:5173", "${FRONTEND_URL:http://localhost:5173}"})
 
 @RestController
 @RequestMapping("/api/pacientes")

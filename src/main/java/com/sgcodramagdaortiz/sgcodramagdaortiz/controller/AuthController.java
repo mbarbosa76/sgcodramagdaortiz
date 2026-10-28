@@ -17,7 +17,7 @@ import jakarta.validation.Valid;
  *
  * POST /api/auth/login
  */
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = {"http://localhost:5173", "${FRONTEND_URL:http://localhost:5173}"})
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {

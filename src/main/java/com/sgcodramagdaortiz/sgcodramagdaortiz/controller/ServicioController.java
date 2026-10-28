@@ -49,7 +49,7 @@ import com.sgcodramagdaortiz.sgcodramagdaortiz.service.ServicioService;
  */
 @RestController
 @RequestMapping("/api/servicios")
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = {"http://localhost:5173", "${FRONTEND_URL:http://localhost:5173}"})
 public class ServicioController {
 
 

@@ -70,7 +70,7 @@ import com.sgcodramagdaortiz.sgcodramagdaortiz.service.DashboardService;
 
 @RequestMapping("/api/dashboard")
 
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = {"http://localhost:5173", "${FRONTEND_URL:http://localhost:5173}"})
 
 public class DashboardController {
 

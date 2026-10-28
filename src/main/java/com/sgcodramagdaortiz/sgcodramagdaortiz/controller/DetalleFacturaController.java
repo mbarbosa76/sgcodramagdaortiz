@@ -38,7 +38,7 @@ import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/detalles-factura")
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = {"http://localhost:5173", "${FRONTEND_URL:http://localhost:5173}"})
 @Validated
 public class DetalleFacturaController {
 

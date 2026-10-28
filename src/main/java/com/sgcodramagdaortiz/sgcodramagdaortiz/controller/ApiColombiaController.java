@@ -35,7 +35,7 @@ import com.sgcodramagdaortiz.sgcodramagdaortiz.service.ApiColombiaService;
  */
 @RestController
 @RequestMapping("/api/publica/colombia")
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = {"http://localhost:5173", "${FRONTEND_URL:http://localhost:5173}"})
 public class ApiColombiaController {
 
     /**

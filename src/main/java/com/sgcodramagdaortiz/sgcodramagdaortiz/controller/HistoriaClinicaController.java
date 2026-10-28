@@ -65,7 +65,7 @@ import jakarta.validation.Valid;
 
 @RequestMapping("/api/historias")
 
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = {"http://localhost:5173", "${FRONTEND_URL:http://localhost:5173}"})
 
 @Validated
 
